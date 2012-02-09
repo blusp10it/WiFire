@@ -1,0 +1,19 @@
+WiFire v0.1
+=======
+Special thanks to red-dragon, vi013t, and qu33n
+=======
+
+==============
+What is WiFire
+==============
+Adalah sebuah bash script yang dibuat oleh blusp10it guna mempermudah
+pentester dalam melakukan cracking password WiFi. Adapun WiFire dapat
+melakukan:
+  1. Scanning WiFi
+  2. Cracking WEP
+  3. Cracking WPA
+
+Project selanjutnya adalah menambahkan mode DoS dan Injection untuk
+melakukan penyerangan
+
+(C)opyright blusp10it
