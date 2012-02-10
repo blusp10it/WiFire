@@ -264,25 +264,31 @@ tampil info "Mac address palsu=$fakeMac"
 #========================================================================================================================
 tampil info "Mengecek program yang dibutuhkan"
 # AirCrack-ng
-if [ ! -e "/usr/sbin/airmon-ng" ] && [ ! -e "/usr/local/sbin/airmon-ng" ] ; then
-   tampil error "aircrack-ng tidak terinstall." 1>&2
-   read -p "[~] Apakah kamu mau meng-install-nya? [Y/n]: " -n 1
-   if [[ $REPLY =~ ^[Yy]$ ]] ; then aksi "Meng-install aircrack-ng" "apt-get -y install aircrack-ng" "true" ; fi
-   if [ ! -e "/usr/sbin/airmon-ng" ] && [ ! -e "/usr/local/sbin/airmon-ng" ] ; then
-      tampil error "Gagal meng-install aircrack-ng" 1>&2 ; cleanup
+if [ "$(which aircrack-ng)" != "/usr/local/bin/aircrack-ng" ];then
+   tampil error "Paket aircrack belum terinstal!!!"
+   echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket AIRCRACK? (y/n) => \033[0m "
+   read aircrack
+   if [ $aircrack != 'y' ]; then
+      echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket aircrack-ng sebelum melanjutkan (=\e[00m"
+      cleanup clean
    else
-      tampil info "aircrack-ng ter-install"
+      tampil aksi "Menginstall paket arptables..."
+      apt-get update && apt-get install aircrack-ng -y
+      tampil info "Selesai"
    fi
 fi
 # MacChanger
-if [ ! -e "/usr/bin/macchanger" ] ; then
-   tampil error "macchanger tidak terinstall."
-   read -p "[~] Apakah kamu mau meng-install-nya? [Y/n]: " -n 1
-   if [[ $REPLY =~ ^[Yy]$ ]] ; then aksi "Meng-install macchanger" "apt-get -y install macchanger" "true" ; fi
-   if [ ! -e "/usr/bin/macchanger" ] ; then
-      tampil error "Gagal meng-install macchanger" 1>&2 ; cleanup
+if [ "$(which macchanger)" != "/usr/bin/macchanger" ];then
+   tampil error "Paket macchanger belum terinstal!!!"
+   echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket MACCHANGER? (y/n) => \033[0m "
+   read macchanger
+   if [ $macchanger != 'y' ]; then
+      echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket macchanger sebelum melanjutkan (=\e[00m"
+      cleanup clean
    else
-      tampil info "macchanger ter-install"
+      tampil aksi "Menginstall paket macchanger..."
+      apt-get update && apt-get install macchanger -y
+      tampil info "Selesai"
    fi
 fi
 #========================================================================================================================

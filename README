@@ -14,4 +14,7 @@ Project selanjutnya adalah menambahkan mode DoS dan Injection untuk
 melakukan penyerangan. Perhatikan, script ini akan sangat optimal jika
 dijalankan di OS Back|Track
 
+Fixed issue:
+  1. Error ketika mengecek dependency
+
 (C)opyright blusp10it
