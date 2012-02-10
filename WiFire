@@ -1,8 +1,11 @@
 #!/bin/bash
-# (C)opyright blusp10it
-# Special thanks to vi013t and red-dragon
-# For my beloved qu33n ^^
-# WiFire v 0.1
+
+####################################################
+# (C)opyright blusp10it                            #
+# WiFire v 0.1                                     #
+# Baca README terlebih dulu                        #
+####################################################
+
 # Variabel dasar
             mode="crack"                                       # AirCrack
        interface="wlan0"                                       # Default
