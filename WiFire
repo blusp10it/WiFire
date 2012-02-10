@@ -12,7 +12,6 @@ monitorInterface="mon0"                                        # Default
            essid=""                                            # null
          channel=""                                            # null
           client=""                                            # null
-        wordlist="/pentest/passwords/wordlists/darkc0de.lst"   # wordlist kamu
          fakeMac="00:05:7c:9a:58:3f"                           # mac address palsu
             plus="true"                                        # jika mendapatkan password, maka akan langsung dicoba
             trap 'cleanup interrupt' 2                         # menangkap interrupt CTRL+C
@@ -51,7 +50,7 @@ aksi() {
    error="free"
    if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
    if [ "$error" == "free" ] ; then
-      xterm="xterm"  # default xterm; bisa diganti dengan terminal favorit kamu (=
+      xterm="xterm"
       command=$2
       if [ "$3" == "2" ] ; then echo "Command: $command" ; fi
       $xterm -geometry 100x15+0+0 -T "WiFire versi $versi - $1" -e "$command" # line+x+y
@@ -151,6 +150,8 @@ if [ "$debug" != "true" ] ; then
    if [ -e "/tmp/WiFire.tmp" ] ; then command="$command /tmp/WiFire.tmp" ; fi
    if [ -e "/tmp/WiFire.conf" ] ; then command="$command /tmp/WiFire.conf" ; fi
    if [ -e "/tmp/WiFire.handshake" ] ; then command="$command /tmp/WiFire.handshake" ; fi
+   if [ -e "/tmp/WiFire.lst" ] ; then command="$command /tmp/WiFire.lst" ; fi
+   if [ -e "/tmp/WiFire.dic" ] ; then command="$command /tmp/WiFire.dic" ; fi
    if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
 fi
 echo -e "\e[01;34m[*]\e[00m Are you \e[01;36mblusp10it?\e[00m"
@@ -161,6 +162,34 @@ exit 0
 echo -e "\e[01;36m[*]\e[00m WiFire v$versi"
 tampil info "(C)opyright blusp10it"
 tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP)"
+#========================================================================================================================
+# Memilih Wordlist
+dir="/pentest/passwords/wordlists/"
+ls -l $dir | awk '{print $9}' | sed -n '2,10 p' >> /tmp/WiFire.dic
+arrayDic=( $(cat /tmp/WiFire.dic) )
+
+dic=""
+id=""
+index="0"
+for item in "${arrayDic[@]}"; do
+        if [ "$dic" ] && [ "$dic" == "$item" ] ; then id="$index" ; fi
+        index=$(($index+1))
+done
+
+echo -e "Berikut adalah daftar wordlist kamu:"
+loop=${#arrayDic[@]}
+echo -e " Num |  Nama Dictionary   \n-----|------------------- "
+for (( i=0;i<$loop;i++)); do
+   printf '  %-3s| %-12s \n' "$(($i+1))" "${arrayDic[${i}]}"
+   printf ' %-3s %-12s\n' "$(($i+1))" "${arrayDic[${i}]}" >> /tmp/WiFire.lst
+done
+echo -e "-------------------------"
+echo -en "Pilih wordlist: "
+read num
+choice=$(cat /tmp/WiFire.lst | grep -w "$num" | awk '{print $2}')
+echo "Wordlist yang terpilih: $dir$choice"
+# Set WordList
+wordlist="$dir$choice"
 #========================================================================================================================
 tampil aksi "Menganalisa keadaan"
 #========================================================================================================================
@@ -184,7 +213,7 @@ if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" 
 #========================================================================================================================
 # Mencetak hasil scan
 tampil info "Mencari Access Point"
-aksi "Melakukan refresh pada interface" "ifconfig $interface down && ifconfig $interface up && sleep 3" "true"
+aksi "Melakukan refresh pada interface" "ifconfig $interface up && sleep 3" "true"
 id=""             # variabel
 index="0"         # variabel
 loopMain="false"  # variabel
