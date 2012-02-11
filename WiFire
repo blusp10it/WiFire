@@ -56,7 +56,7 @@ aksi() {
       xterm="xterm"
       command=$2
       if [ "$3" == "2" ] ; then echo "Command: $command" ; fi
-      $xterm -geometry 100x15+0+0 -T "WiFire versi $versi - $1" -e "$command" # line+x+y
+      $xterm -geometry 100x25+0+0 -T "WiFire versi $versi - $1" -e "$command" # line+x+y
       return 0
    else
       echo -e "ERROR *_*"
@@ -168,7 +168,7 @@ tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP
 #========================================================================================================================
 # Memilih Wordlist
 dir="/pentest/passwords/wordlists/"
-ls -l $dir | awk '{print $9}' | sed -n '2,10 p' >> /tmp/WiFire.dic
+ls $dir >> /tmp/WiFire.dic
 arrayDic=( $(cat /tmp/WiFire.dic) )
 
 dic=""
@@ -256,7 +256,6 @@ tampil info "ESSID=$essid"
 tampil info "BSSID=$bssid"
 tampil info "Teknologi enkripsi=$encryption"
 tampil info "Channel=$channel"
-tampil info "Klien=$client"
 tampil info "Wordlist=$wordlist"
 tampil info "Mac address palsu=$fakeMac"
 #========================================================================================================================
@@ -264,6 +263,7 @@ tampil info "Mac address palsu=$fakeMac"
 #========================================================================================================================
 tampil info "Mengecek program yang dibutuhkan"
 # AirCrack-ng
+tampil info "Mengecek aircrack -ng"
 if [ "$(which aircrack-ng)" != "/usr/local/bin/aircrack-ng" ];then
    tampil error "Paket aircrack belum terinstal!!!"
    echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket AIRCRACK? (y/n) => \033[0m "
@@ -278,18 +278,22 @@ if [ "$(which aircrack-ng)" != "/usr/local/bin/aircrack-ng" ];then
    fi
 fi
 # MacChanger
-if [ "$(which macchanger)" != "/usr/bin/macchanger" ];then
-   tampil error "Paket macchanger belum terinstal!!!"
-   echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket MACCHANGER? (y/n) => \033[0m "
-   read macchanger
-   if [ $macchanger != 'y' ]; then
-      echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket macchanger sebelum melanjutkan (=\e[00m"
-      cleanup clean
-   else
-      tampil aksi "Menginstall paket macchanger..."
-      apt-get update && apt-get install macchanger -y
-      tampil info "Selesai"
-   fi
+tampil info "Mengecek macchanger"
+if [ "$(dpkg -l | grep macchanger | awk '{print $2}')" != "macchanger" ];then
+     echo -e "\e[0;31mPaket macchanger belum terinstal!!!\e[00m"
+     echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket MacChanger? (y/n) => \033[0m "
+     read choice
+     if [ $choice != 'y' ]; then
+          echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket macchanger sebelum melanjutkan (=\e[00m"
+          exit 1
+     else
+          echo -e "Menginstall paket macchanger..."
+          apt-get update && apt-get install macchanger -y
+          echo -e "Selesai!!!"
+          echo "Kembali ke menu awal..."
+          sleep 2
+     fi
+     exit 1
 fi
 #========================================================================================================================
 tampil aksi "Melakukan penyesuaian"
