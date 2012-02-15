@@ -1,20 +1,22 @@
-WiFire v0.1
+WiFire v0.1 RC2
 
 What is WiFire
 ==============
 Adalah sebuah bash script yang dibuat oleh blusp10it guna mempermudah
 pentester dalam melakukan cracking password WiFi. Adapun WiFire dapat
 melakukan:
-  1. Scanning AP dan mendeteksi teknologi enkripsinya
-  2. Mencari client dan menyesuaikan wordlist
-  3. Cracking WEP
-  4. Cracking WPA
+  1. Scanning AP dan mendeteksi teknologi enkripsinya => Beta 0
+  2. Mencari client dan menyesuaikan wordlist => Beta 0
+  3. Cracking WEP => Beta 0
+  4. Cracking WPA => Beta 0
 
 Project selanjutnya adalah menambahkan mode DoS dan Injection untuk
 melakukan penyerangan. Perhatikan, script ini akan sangat optimal jika
 dijalankan di OS Back|Track 5*
 
 Fixed issue:
-  1. Error ketika mengecek dependency
+  1. Error ketika mengecek dependency => Beta 0
+  2. Cek wordlist otomatis => RC 1
+  3. Mengembalikan Network Manager Daemon yang tertutup karena airmon-ng check kill => RC 1
 
 (C)opyright blusp10it
