@@ -12,11 +12,13 @@ melakukan:
 
 Project selanjutnya adalah menambahkan mode DoS dan Injection untuk
 melakukan penyerangan. Perhatikan, script ini akan sangat optimal jika
-dijalankan di OS Back|Track 5*
+dijalankan di OS Back|Track 5.
 
 Fixed issue:
   1. Error ketika mengecek dependency => Beta 0
   2. Cek wordlist otomatis => RC 1
   3. Mengembalikan Network Manager Daemon yang tertutup karena airmon-ng check kill => RC 1
+  4. Membuat laporan key di working directory => RC2
+  5. Improve performace Deauth => RC2
 
 (C)opyright blusp10it

