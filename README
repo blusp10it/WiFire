@@ -1,4 +1,4 @@
-WiFire v0.1 RC3
+WiFire v0.2
 
 What is WiFire
 ==============
@@ -18,9 +18,12 @@ Fixed issue:
   1. Error ketika mengecek dependency => Beta 0
   2. Cek wordlist otomatis => RC 1
   3. Mengembalikan Network Manager Daemon yang tertutup karena airmon-ng check kill => RC 1
-  4. Membuat laporan key di working directory => RC2
-  5. Improve performace Deauth => RC2
-  6. Interface selain wlan0 => RC3
-  7. Default wordlist adalah "/pentest/passwords/wordlists/darkc0de.lst"
+  4. Membuat laporan key di working directory => RC 2
+  5. Improve performace Deauth => RC 2
+  6. Interface selain wlan0 => RC 3
+  7. Default wordlist adalah "/pentest/passwords/wordlists/darkc0de.lst" => RC 3
+  8. LOOPING issue fixed => 0.2
+  9. Typo fixed => 0.2
+ 10. New banner => 0.2
 
 (C)opyright blusp10it
