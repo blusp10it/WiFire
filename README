@@ -1,4 +1,4 @@
-WiFire v0.1 RC2
+WiFire v0.1 RC3
 
 What is WiFire
 ==============
@@ -20,5 +20,7 @@ Fixed issue:
   3. Mengembalikan Network Manager Daemon yang tertutup karena airmon-ng check kill => RC 1
   4. Membuat laporan key di working directory => RC2
   5. Improve performace Deauth => RC2
+  6. Interface selain wlan0 => RC3
+  7. Default wordlist adalah "/pentest/passwords/wordlists/darkc0de.lst"
 
 (C)opyright blusp10it

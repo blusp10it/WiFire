@@ -2,13 +2,13 @@
 
 ####################################################
 # (C)opyright blusp10it                            #
-# WiFire v 0.1 RC2                                 #
+# WiFire v 0.1 RC3                                 #
 # Baca README terlebih dulu (=                     #
 ####################################################
 
 # Variabel dasar
             mode="crack"                                       # AirCrack
-       interface="wlan0"                                       # Default
+       interface=""                                            # Default
            versi="0.1 RC2"                                     # Versi
 monitorInterface="mon0"                                        # Default
            bssid=""                                            # null
@@ -18,10 +18,11 @@ monitorInterface="mon0"                                        # Default
          fakeMac="00:05:7c:9a:58:3f"                           # mac address palsu
             plus="true"                                        # jika mendapatkan password, maka akan langsung dicoba
             trap 'cleanup interrupt' 2                         # menangkap interrupt CTRL+C
+        wordlist="/pentest/passwords/wordlists/darkc0de.lst"   # Wordlist
 
 # Scanning
 cariAP() {
-iwlist wlan0 scan > /tmp/WiFire.tmp
+iwlist $interface scan > /tmp/WiFire.tmp
 arrayESSID=( $(cat /tmp/WiFire.tmp | awk -F":" '/ESSID/{print $2}') )
 arrayBSSID=( $(cat /tmp/WiFire.tmp | grep "Address:" | awk '{print $5}\') )
 arrayChannel=( $(cat /tmp/WiFire.tmp | grep "Channel:" | tr ':' ' ' | awk '{print $2}\') )
@@ -156,6 +157,8 @@ if [ "$debug" != "true" ] ; then
    if [ -e "/tmp/WiFire.handshake" ] ; then command="$command /tmp/WiFire.handshake" ; fi
    if [ -e "/tmp/WiFire.lst" ] ; then command="$command /tmp/WiFire.lst" ; fi
    if [ -e "/tmp/WiFire.dic" ] ; then command="$command /tmp/WiFire.dic" ; fi
+   if [ -e "/tmp/interface" ] ; then command="$command /tmp/interface" ; fi
+   if [ -e "/tmp/WiFi.tmp" ] ; then command="$command /tmp/WiFi.tmp" ; fi
    if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
 fi
 if [ -e "/etc/init.d/network-manager" ]; then
@@ -170,17 +173,6 @@ echo -e "\e[01;36m[*]\e[00m WiFire v$versi"
 tampil info "(C)opyright blusp10it"
 tampil info "Skrip ini berfungsi untuk melakukan cracking WiFi password (WPA/WEP)"
 #========================================================================================================================
-# Memilih Wordlist
-dir="/pentest/passwords/wordlists"
-ls $dir >> /tmp/WiFire.dic
-if [ -e "$dir/darkc0de.lst" ]; then
-     wordlist="$dir/darkc0de.lst"
-elif [ -e "$dir/wpa.txt" ]; then
-     wordlist="$dir/wpa.txt"
-else
-     echo -e "Tidak ada wordlist di directory $dir!!!"
-     exit
-fi
 tampil info "Wordlist=$wordlist"
 #========================================================================================================================
 tampil aksi "Menganalisa keadaan"
@@ -203,6 +195,28 @@ if [ -e "/tmp/WiFire.tmp" ] ; then command="$command /tmp/WiFire.tmp" ; fi
 if [ -e "/tmp/WiFire.conf" ] ; then command="$command /tmp/WiFire.conf" ; fi
 if [ -e "/tmp/WiFire.handshake" ] ; then command="$command /tmp/WiFire.handshake" ; fi
 if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
+#========================================================================================================================
+# Memilih Interface
+echo -e "\e[01;33mBerikut adalah daftar interface kamu yang sedang UP\e[00m"
+ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/WiFi.tmp
+arrayInterface=( $(cat /tmp/WiFi.tmp) )
+namaInterface=""
+id=""
+index="0"
+for item in "${arrayInterface[@]}"; do
+        if [ "$namaInterface" ] && [ "$namaInterface" == "$item" ] ; then id="$index" ; fi
+        index=$(($index+1))
+done
+echo -e "  No | Interface |\n-----|-----------|"
+loop=${#arrayInterface[@]}
+for (( i=0;i<$loop;i++)); do
+        printf ' %-3s | %-9s |\n' "$(($i+1))" "${arrayInterface[${i}]}"
+        echo "$(($i+1))" "${arrayInterface[${i}]}" >> /tmp/interface
+done
+echo -en "Pilih interface: "
+read choice
+interface=$(cat /tmp/interface | grep $choice | awk '{print $2}')
+tampil info "Interface = $interface"
 #========================================================================================================================
 # Mencetak hasil scan
 tampil info "Mencari Access Point"
@@ -269,7 +283,7 @@ if [ "$(which aircrack-ng)" != "/usr/local/bin/aircrack-ng" ];then
 fi
 # MacChanger
 tampil info "Mengecek macchanger"
-if [ "$(dpkg -l | grep macchanger | awk '{print $2}')" != "macchanger" ];then
+if [ -e "/usr/local/bin/macchanger" ] || [ -e "/usr/bin/macchanger" ];then
      echo -e "\e[0;31mPaket macchanger belum terinstal!!!\e[00m"
      echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket MacChanger? (y/n) => \033[0m "
      read choice
