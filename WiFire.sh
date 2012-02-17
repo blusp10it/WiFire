@@ -2,7 +2,7 @@
 #------------------------------COPYRIGHT------------------------------#
 # Jika kamu ingin mengembangkan scrip ini, jangan hapus bagian ini
 # (C)opyRight by blusp10it
-# Gunakan script ini secara bijak
+# Gunakan script ini secara bijak (=
 #------------------------------COPYRIGHT------------------------------#
 
 #------------------------------VARIABEL DASAR------------------------------#
