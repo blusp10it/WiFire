@@ -7,7 +7,7 @@
 
 #------------------------------VARIABEL DASAR------------------------------#
        interface=""                                            # Default
-           versi="0.3"                                         # Versi
+           versi="0.2"                                         # Versi
 monitorInterface="mon0"                                        # Default
            bssid=""                                            # null
            essid=""                                            # null

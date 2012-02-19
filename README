@@ -23,7 +23,7 @@ Fixed issue:
   6. Interface selain wlan0 => RC 3
   7. Default wordlist adalah "/pentest/passwords/wordlists/darkc0de.lst" => RC 3
   8. LOOPING issue fixed => 0.2
-  9. Typo fixed => 0.2
+  9. Typo fixed (= => 0.2
  10. New banner => 0.2
 
 (C)opyright blusp10it
