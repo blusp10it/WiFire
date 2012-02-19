@@ -1,13 +1,13 @@
 #!/bin/bash
 #------------------------------COPYRIGHT------------------------------#
-# Jika kamu ingin mengembangkan scrip ini, jangan hapus bagian ini
+# Jika kamu ingin mengembangkan script ini, jangan hapus bagian ini
 # (C)opyRight by blusp10it
 # Gunakan script ini secara bijak (=
 #------------------------------COPYRIGHT------------------------------#
 
 #------------------------------VARIABEL DASAR------------------------------#
        interface=""                                            # Default
-           versi="0.2"                                         # Versi
+           versi="0.3"                                         # Versi
 monitorInterface="mon0"                                        # Default
            bssid=""                                            # null
            essid=""                                            # null
