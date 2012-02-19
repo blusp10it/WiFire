@@ -214,7 +214,7 @@ if [ -e "/tmp/interface" ] ; then command="$command /tmp/interface" ; fi
 if [ -e "/tmp/WiFi.tmp" ] ; then command="$command /tmp/WiFi.tmp" ; fi
 if [ ! -z "$command" ] ; then aksi "Menghapus file temporer" "rm -rfv $command" "true" ; fi
 #------------------------------Memilih Interface------------------------------#
-echo -e "\e[01;33mBerikut adalah daftar interface kamu yang sedang UP\e[00m"
+tampil info "Berikut adalah daftar interface yang sedang aktif"
 ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/WiFi.tmp
 arrayInterface=( $(cat /tmp/WiFi.tmp) )
 namaInterface=""
