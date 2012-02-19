@@ -427,20 +427,21 @@ if [ -e "/tmp/WiFire.key" ] ; then
      echo -e "-----KEY FOUND-----
 ESSID = $essid
 BSSID = $bssid
-  KEY = $key" >> /root/WiFire.key
-     echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a" | awk '{printf "%s\n", $_}' >> $(pwd)/WiFire.key
-     loop="false"
+  KEY = $key
+Are you blusp10it?" >> /root/WiFire.key
+     loop="true"
      while [ $loop != "false" ] ; do
           read -p "[~] Key ditemukan, apakah kamu ingin mencobanya? [y/n] "
-          if [[ "$REPLY" =~ ^[yY]$ ]] ; then
+          if [ "$REPLY" == "y" ] ; then
                plus="true"
-               loop="true"
-          elif [[ "$REPLY" =~ ^[nN]$ ]] ; then
+               loop="false"
+          elif [ "$REPLY" == "n" ] ; then
                plus="false"
-               loop="true"
+               loop="false"
+               cleanup clean
           else
                tampil error "Pilihan tidak valid!!! [$REPLY]" 1>&2
-               fi
+          fi
      done
 #------------------------------Koneksi Ke Akses Poin------------------------------#
      if [ "$plus" == "true" ] ; then
@@ -463,10 +464,6 @@ BSSID = $bssid
                gateway=$(route -n | grep $interface | awk '/^0.0.0.0/ {getline; print $2}')
                tampil info "Gateway: $gateway"
           fi
-     else
-#------------------------------EXIT------------------------------#
-          cleanup clean
-     fi
 #------------------------------KEY Tidak Ditemukan, Memindahkan Handshake------------------------------#
      elif [ "$encryption" == "WPA" ] ; then
           tampil error "WiFi Key tidak ada dalam wordlist" 1>&2
